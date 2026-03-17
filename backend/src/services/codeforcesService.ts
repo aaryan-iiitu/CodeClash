@@ -5,7 +5,7 @@ type RatingRange = {
   max: number;
 };
 
-type CodeforcesProblem = {
+export type CodeforcesProblem = {
   contestId?: number;
   index: string;
   name: string;
@@ -35,7 +35,7 @@ type UserStatusResponse = {
 
 const CODEFORCES_API_BASE_URL = "https://codeforces.com/api";
 
-const buildProblemKey = (problem: { contestId?: number; index: string }) => {
+export const buildProblemKey = (problem: { contestId?: number; index: string }) => {
   return `${problem.contestId ?? "unknown"}-${problem.index}`;
 };
 

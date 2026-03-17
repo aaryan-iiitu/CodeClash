@@ -20,12 +20,18 @@ type TrackerInput = {
   problemId: string;
   startedAt?: Date;
   pollIntervalMs?: number;
+  onUpdate?: (snapshot: SubmissionSnapshot) => void;
 };
 
-type TrackerResult = {
+export type TrackerResult = {
   winner: string | null;
   submissionTime: Date;
   isTie: boolean;
+};
+
+export type SubmissionSnapshot = {
+  user1AcceptedTime: Date | null;
+  user2AcceptedTime: Date | null;
 };
 
 const CODEFORCES_API_BASE_URL = "https://codeforces.com/api";
@@ -123,7 +129,8 @@ export const trackFirstAcceptedSubmission = async ({
   user2Handle,
   problemId,
   startedAt,
-  pollIntervalMs = DEFAULT_POLL_INTERVAL_MS
+  pollIntervalMs = DEFAULT_POLL_INTERVAL_MS,
+  onUpdate
 }: TrackerInput): Promise<TrackerResult> => {
   while (true) {
     const [user1Submissions, user2Submissions] = await Promise.all([
@@ -141,6 +148,15 @@ export const trackFirstAcceptedSubmission = async ({
       submissions: user2Submissions,
       problemId,
       startedAt
+    });
+
+    onUpdate?.({
+      user1AcceptedTime: user1Accepted
+        ? new Date(user1Accepted.creationTimeSeconds * 1000)
+        : null,
+      user2AcceptedTime: user2Accepted
+        ? new Date(user2Accepted.creationTimeSeconds * 1000)
+        : null
     });
 
     const result = resolveTrackerResult({
