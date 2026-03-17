@@ -1,4 +1,4 @@
-type QueueUser = {
+export type QueueUser = {
   userId: string;
   handle: string;
   rating: number;
@@ -7,7 +7,7 @@ type QueueUser = {
   joinedAt: Date;
 };
 
-type MatchedPair = {
+export type MatchedPair = {
   user1: QueueUser;
   user2: QueueUser;
 };

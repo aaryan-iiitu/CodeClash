@@ -1,14 +1,23 @@
 import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
+import http from "http";
+import { Server } from "socket.io";
 import { connectDB } from "./config/db";
 import matchRoutes from "./routes/matchRoutes";
 import userRoutes from "./routes/userRoutes";
+import { registerDuelSocket } from "./sockets/duelSocket";
 
 dotenv.config();
 
 const app = express();
 const PORT = 5000;
+const httpServer = http.createServer(app);
+const io = new Server(httpServer, {
+  cors: {
+    origin: "*"
+  }
+});
 
 app.use(cors());
 app.use(express.json());
@@ -22,8 +31,9 @@ app.get("/", (_req, res) => {
 
 const startServer = async () => {
   await connectDB();
+  registerDuelSocket(io);
 
-  app.listen(PORT, () => {
+  httpServer.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
   });
 };
