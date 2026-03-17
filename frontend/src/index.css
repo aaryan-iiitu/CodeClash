@@ -1,13 +1,14 @@
-:root {
-  font-family: Arial, sans-serif;
-  color: #101828;
-  background: #f8fafc;
-}
+@import "tailwindcss";
 
 * {
   box-sizing: border-box;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   margin: 0;
+  font-family: "Segoe UI", sans-serif;
 }
