@@ -2,6 +2,7 @@ import { Server, Socket } from "socket.io";
 import { Match } from "../models/Match";
 import { buildProblemKey, getRandomCodeforcesProblem } from "../services/codeforcesService";
 import { addUserToQueue, findMatch, MatchedPair } from "../services/matchmakingService";
+import { updateRating } from "../services/ratingService";
 import { trackFirstAcceptedSubmission } from "../services/submissionTrackerService";
 
 type JoinQueuePayload = {
@@ -138,6 +139,16 @@ const startTrackedMatch = async ({
             ? matchedPair.user2.userId
             : null;
 
+      const loserId =
+        winnerId === matchedPair.user1.userId
+          ? matchedPair.user2.userId
+          : winnerId === matchedPair.user2.userId
+            ? matchedPair.user1.userId
+            : null;
+
+      const ratingUpdate =
+        winnerId && loserId ? await updateRating(winnerId, loserId) : null;
+
       await Match.findByIdAndUpdate(match._id, {
         status: "finished",
         winner: winnerId,
@@ -150,7 +161,8 @@ const startTrackedMatch = async ({
         winner: result.winner,
         winnerId,
         submissionTime: result.submissionTime,
-        isTie: result.isTie
+        isTie: result.isTie,
+        ratings: ratingUpdate
       });
 
       clearMatchRoom(roomUsers);
