@@ -1,4 +1,9 @@
-const Navbar = () => {
+type NavbarProps = {
+  handle: string | null;
+  onLogout: () => void;
+};
+
+const Navbar = ({ handle, onLogout }: NavbarProps) => {
   return (
     <header className="sticky top-0 z-20 border-b border-slate-800 bg-slate-950/85 backdrop-blur">
       <nav className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-6">
@@ -24,9 +29,22 @@ const Navbar = () => {
           </a>
         </div>
 
-        <button className="rounded-full border border-cyan-400/40 px-5 py-2 text-sm font-semibold text-cyan-200 transition hover:bg-cyan-400/10">
-          Sign In
-        </button>
+        {handle ? (
+          <div className="flex items-center gap-3">
+            <span className="hidden text-sm text-slate-300 sm:inline">@{handle}</span>
+            <button
+              className="rounded-full border border-cyan-400/40 px-5 py-2 text-sm font-semibold text-cyan-200 transition hover:bg-cyan-400/10"
+              onClick={onLogout}
+              type="button"
+            >
+              Logout
+            </button>
+          </div>
+        ) : (
+          <button className="rounded-full border border-cyan-400/40 px-5 py-2 text-sm font-semibold text-cyan-200 transition hover:bg-cyan-400/10">
+            Sign In
+          </button>
+        )}
       </nav>
     </header>
   );

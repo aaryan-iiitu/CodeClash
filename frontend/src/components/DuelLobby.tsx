@@ -1,6 +1,10 @@
 import { useSocket } from "../hooks/useSocket";
 
-const DuelLobby = () => {
+type DuelLobbyProps = {
+  handle: string;
+};
+
+const DuelLobby = ({ handle }: DuelLobbyProps) => {
   const socket = useSocket();
 
   return (
@@ -16,6 +20,9 @@ const DuelLobby = () => {
           <p className="max-w-2xl text-lg leading-8 text-slate-300">
             CodeClash pairs developers with evenly matched opponents, fetches a problem in
             range, and tracks the winner live through Socket.IO.
+          </p>
+          <p className="text-sm font-medium uppercase tracking-[0.25em] text-cyan-200">
+            Logged in as {handle}
           </p>
         </div>
         <div className="flex flex-wrap gap-4">
