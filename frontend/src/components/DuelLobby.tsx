@@ -1,3 +1,5 @@
+import axios from "axios";
+import { useState } from "react";
 import { useSocket } from "../hooks/useSocket";
 
 type DuelLobbyProps = {
@@ -6,6 +8,40 @@ type DuelLobbyProps = {
 
 const DuelLobby = ({ handle }: DuelLobbyProps) => {
   const socket = useSocket();
+  const [ratingRange, setRatingRange] = useState(200);
+  const [queueStatus, setQueueStatus] = useState("Idle");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const joinQueue = async () => {
+    try {
+      setIsLoading(true);
+      setQueueStatus("Joining queue...");
+
+      const response = await axios.post("http://localhost:5000/api/matchmaking/join", {
+        handle,
+        ratingRange
+      });
+
+      const data = response.data as
+        | { status: "queued"; user: { minRating: number; maxRating: number } }
+        | { status: "matched"; pair: { user1: { handle: string }; user2: { handle: string } } };
+
+      if (data.status === "matched") {
+        setQueueStatus(
+          `Match found: ${data.pair.user1.handle} vs ${data.pair.user2.handle}`
+        );
+        return;
+      }
+
+      setQueueStatus(
+        `Queued for ${data.user.minRating} to ${data.user.maxRating} rating range`
+      );
+    } catch (error) {
+      setQueueStatus("Could not join queue");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <main className="grid gap-10 lg:grid-cols-[1.3fr_0.9fr]">
@@ -26,8 +62,29 @@ const DuelLobby = ({ handle }: DuelLobbyProps) => {
           </p>
         </div>
         <div className="flex flex-wrap gap-4">
-          <button className="rounded-full bg-cyan-400 px-6 py-3 font-semibold text-slate-950 transition hover:bg-cyan-300">
-            Join Queue
+          <div className="flex items-center gap-3 rounded-full border border-slate-800 bg-slate-900/80 px-4 py-2">
+            <label className="text-sm font-medium text-slate-300" htmlFor="ratingRange">
+              Rating range
+            </label>
+            <select
+              className="rounded-full bg-slate-950 px-4 py-2 text-sm text-white outline-none"
+              id="ratingRange"
+              onChange={(event) => setRatingRange(Number(event.target.value))}
+              value={ratingRange}
+            >
+              <option value={100}>+/- 100</option>
+              <option value={200}>+/- 200</option>
+              <option value={300}>+/- 300</option>
+              <option value={500}>+/- 500</option>
+            </select>
+          </div>
+          <button
+            className="rounded-full bg-cyan-400 px-6 py-3 font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:bg-cyan-700"
+            disabled={isLoading}
+            onClick={joinQueue}
+            type="button"
+          >
+            {isLoading ? "Finding..." : "Find Match"}
           </button>
           <button className="rounded-full border border-slate-700 px-6 py-3 font-semibold text-slate-100 transition hover:border-slate-500 hover:bg-slate-900">
             View Leaderboard
@@ -60,7 +117,7 @@ const DuelLobby = ({ handle }: DuelLobbyProps) => {
           </div>
           <div className="rounded-2xl bg-slate-950/70 p-4">
             <p className="text-slate-400">API</p>
-            <p className="mt-1 text-base font-medium text-white">Axios setup can plug in here</p>
+            <p className="mt-1 text-base font-medium text-white">{queueStatus}</p>
           </div>
         </div>
       </section>

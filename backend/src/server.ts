@@ -4,6 +4,7 @@ import express from "express";
 import http from "http";
 import { Server } from "socket.io";
 import { connectDB } from "./config/db";
+import matchmakingRoutes from "./routes/matchmakingRoutes";
 import matchRoutes from "./routes/matchRoutes";
 import userRoutes from "./routes/userRoutes";
 import { registerDuelSocket } from "./sockets/duelSocket";
@@ -22,6 +23,7 @@ const io = new Server(httpServer, {
 app.use(cors());
 app.use(express.json());
 
+app.use("/api/matchmaking", matchmakingRoutes);
 app.use("/api/matches", matchRoutes);
 app.use("/api/users", userRoutes);
 
