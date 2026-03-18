@@ -3,6 +3,15 @@ import { useSocket } from "../hooks/useSocket";
 
 type MatchScreenProps = {
   handle: string;
+  onRematch: () => void;
+};
+
+type RatingSummary = {
+  id: string;
+  handle: string;
+  rating: number;
+  matchesPlayed: number;
+  wins: number;
 };
 
 const MATCH_DURATION_MS = 30 * 60 * 1000;
@@ -17,7 +26,7 @@ const formatTime = (milliseconds: number) => {
   return `${minutes}:${seconds}`;
 };
 
-const MatchScreen = ({ handle }: MatchScreenProps) => {
+const MatchScreen = ({ handle, onRematch }: MatchScreenProps) => {
   const { matchState } = useSocket();
   const [timeLeft, setTimeLeft] = useState(MATCH_DURATION_MS);
 
@@ -85,6 +94,23 @@ const MatchScreen = ({ handle }: MatchScreenProps) => {
       ? matchState.submissionUpdate?.user2AcceptedTime
       : matchState.submissionUpdate?.user1AcceptedTime;
 
+  const timeTaken =
+    matchState.result?.submissionTime && matchState.startedAt
+      ? formatTime(
+          new Date(matchState.result.submissionTime).getTime() -
+            new Date(matchState.startedAt).getTime()
+        )
+      : null;
+
+  const ratings = (matchState.result as
+    | (typeof matchState.result & {
+        ratings?: {
+          winner: RatingSummary;
+          loser: RatingSummary;
+        } | null;
+      })
+    | null)?.ratings;
+
   return (
     <section className="rounded-[2rem] border border-slate-800 bg-slate-900/80 p-8 shadow-2xl shadow-cyan-950/20 backdrop-blur">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -150,6 +176,37 @@ const MatchScreen = ({ handle }: MatchScreenProps) => {
                   : `${matchState.result.winner} won the duel`
                 : "Waiting for submissions"}
             </p>
+            {matchState.result ? (
+              <div className="mt-4 space-y-2 text-sm text-slate-300">
+                <p>
+                  Winner:{" "}
+                  <span className="font-medium text-white">
+                    {matchState.result.isTie ? "Tie" : matchState.result.winner}
+                  </span>
+                </p>
+                <p>
+                  Time taken: <span className="font-medium text-white">{timeTaken ?? "--:--"}</span>
+                </p>
+                {ratings ? (
+                  <div className="space-y-1">
+                    <p className="font-medium text-white">Rating changes</p>
+                    <p>
+                      {ratings.winner.handle}: {ratings.winner.rating}
+                    </p>
+                    <p>
+                      {ratings.loser.handle}: {ratings.loser.rating}
+                    </p>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+            <button
+              className="mt-5 inline-flex rounded-full border border-cyan-400/40 px-5 py-3 font-semibold text-cyan-200 transition hover:bg-cyan-400/10"
+              onClick={onRematch}
+              type="button"
+            >
+              Rematch
+            </button>
           </div>
         </div>
       </div>

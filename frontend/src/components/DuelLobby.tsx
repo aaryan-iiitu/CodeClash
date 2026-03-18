@@ -4,9 +4,10 @@ import MatchScreen from "./MatchScreen";
 
 type DuelLobbyProps = {
   handle: string;
+  onOpenLeaderboard: () => void;
 };
 
-const DuelLobby = ({ handle }: DuelLobbyProps) => {
+const DuelLobby = ({ handle, onOpenLeaderboard }: DuelLobbyProps) => {
   const { connected, matchState, queueMessage, queueStatus, joinQueue, resetMatchState } =
     useSocket();
   const [ratingRange, setRatingRange] = useState(200);
@@ -14,114 +15,120 @@ const DuelLobby = ({ handle }: DuelLobbyProps) => {
 
   return (
     <main className="grid gap-10">
-      {matchState.status !== "idle" ? <MatchScreen handle={handle} /> : null}
+      {matchState.status !== "idle" ? (
+        <MatchScreen handle={handle} onRematch={() => joinQueue({ handle, ratingRange })} />
+      ) : null}
 
       <div className="grid gap-10 lg:grid-cols-[1.3fr_0.9fr]">
-      <section className="space-y-6">
-        <span className="inline-flex rounded-full border border-cyan-400/30 bg-cyan-400/10 px-4 py-1 text-sm font-medium text-cyan-200">
-          Real-time coding duels
-        </span>
-        <div className="space-y-4">
-          <h1 className="max-w-3xl text-5xl font-semibold tracking-tight text-white sm:text-6xl">
-            Compete live, solve faster, and climb the duel ladder.
-          </h1>
-          <p className="max-w-2xl text-lg leading-8 text-slate-300">
-            CodeClash pairs developers with evenly matched opponents, fetches a problem in
-            range, and tracks the winner live through Socket.IO.
-          </p>
-          <p className="text-sm font-medium uppercase tracking-[0.25em] text-cyan-200">
-            Logged in as {handle}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-4">
-          <div className="flex items-center gap-3 rounded-full border border-slate-800 bg-slate-900/80 px-4 py-2">
-            <label className="text-sm font-medium text-slate-300" htmlFor="ratingRange">
-              Rating range
-            </label>
-            <select
-              className="rounded-full bg-slate-950 px-4 py-2 text-sm text-white outline-none"
-              id="ratingRange"
-              onChange={(event) => setRatingRange(Number(event.target.value))}
-              value={ratingRange}
-            >
-              <option value={100}>+/- 100</option>
-              <option value={200}>+/- 200</option>
-              <option value={300}>+/- 300</option>
-              <option value={500}>+/- 500</option>
-            </select>
+        <section className="space-y-6">
+          <span className="inline-flex rounded-full border border-cyan-400/30 bg-cyan-400/10 px-4 py-1 text-sm font-medium text-cyan-200">
+            Real-time coding duels
+          </span>
+          <div className="space-y-4">
+            <h1 className="max-w-3xl text-5xl font-semibold tracking-tight text-white sm:text-6xl">
+              Compete live, solve faster, and climb the duel ladder.
+            </h1>
+            <p className="max-w-2xl text-lg leading-8 text-slate-300">
+              CodeClash pairs developers with evenly matched opponents, fetches a problem in
+              range, and tracks the winner live through Socket.IO.
+            </p>
+            <p className="text-sm font-medium uppercase tracking-[0.25em] text-cyan-200">
+              Logged in as {handle}
+            </p>
           </div>
-          <button
-            className="rounded-full bg-cyan-400 px-6 py-3 font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:bg-cyan-700"
-            disabled={isLoading}
-            onClick={() => joinQueue({ handle, ratingRange })}
-            type="button"
-          >
-            {isLoading ? "Finding..." : "Find Match"}
-          </button>
-          <button className="rounded-full border border-slate-700 px-6 py-3 font-semibold text-slate-100 transition hover:border-slate-500 hover:bg-slate-900">
-            View Leaderboard
-          </button>
-          {matchState.status !== "idle" ? (
+          <div className="flex flex-wrap gap-4">
+            <div className="flex items-center gap-3 rounded-full border border-slate-800 bg-slate-900/80 px-4 py-2">
+              <label className="text-sm font-medium text-slate-300" htmlFor="ratingRange">
+                Rating range
+              </label>
+              <select
+                className="rounded-full bg-slate-950 px-4 py-2 text-sm text-white outline-none"
+                id="ratingRange"
+                onChange={(event) => setRatingRange(Number(event.target.value))}
+                value={ratingRange}
+              >
+                <option value={100}>+/- 100</option>
+                <option value={200}>+/- 200</option>
+                <option value={300}>+/- 300</option>
+                <option value={500}>+/- 500</option>
+              </select>
+            </div>
             <button
-              className="rounded-full border border-rose-400/40 px-6 py-3 font-semibold text-rose-200 transition hover:bg-rose-400/10"
-              onClick={resetMatchState}
+              className="rounded-full bg-cyan-400 px-6 py-3 font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:bg-cyan-700"
+              disabled={isLoading}
+              onClick={() => joinQueue({ handle, ratingRange })}
               type="button"
             >
-              Clear Match State
+              {isLoading ? "Finding..." : "Find Match"}
             </button>
-          ) : null}
-        </div>
-      </section>
-
-      <section className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-2xl shadow-cyan-950/20 backdrop-blur">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-white">Match Status</h2>
-          <span
-            className={`rounded-full px-3 py-1 text-sm font-medium ${
-              connected
-                ? "bg-emerald-400/15 text-emerald-300"
-                : "bg-amber-400/15 text-amber-300"
-            }`}
-          >
-            {connected ? "Connected" : "Connecting"}
-          </span>
-        </div>
-
-        <div className="mt-6 space-y-4 text-sm text-slate-300">
-          <div className="rounded-2xl bg-slate-950/70 p-4">
-            <p className="text-slate-400">Frontend</p>
-            <p className="mt-1 text-base font-medium text-white">React + Vite + TypeScript</p>
-          </div>
-          <div className="rounded-2xl bg-slate-950/70 p-4">
-            <p className="text-slate-400">Realtime</p>
-            <p className="mt-1 text-base font-medium text-white">Socket.IO client ready</p>
-          </div>
-          <div className="rounded-2xl bg-slate-950/70 p-4">
-            <p className="text-slate-400">API</p>
-            <p className="mt-1 text-base font-medium text-white">{queueMessage}</p>
-          </div>
-          <div className="rounded-2xl bg-slate-950/70 p-4">
-            <p className="text-slate-400">Global Match State</p>
-            <p className="mt-1 text-base font-medium text-white">
-              {matchState.status === "idle"
-                ? "No active match"
-                : `Status: ${matchState.status}`}
-            </p>
-            {matchState.problem ? (
-              <p className="mt-2 text-slate-300">
-                Problem: {matchState.problem.name} ({matchState.problem.problemId})
-              </p>
-            ) : null}
-            {matchState.result ? (
-              <p className="mt-2 text-slate-300">
-                Result: {matchState.result.isTie
-                  ? "Tie"
-                  : matchState.result.winner ?? "Pending"}
-              </p>
+            <button
+              className="rounded-full border border-slate-700 px-6 py-3 font-semibold text-slate-100 transition hover:border-slate-500 hover:bg-slate-900"
+              onClick={onOpenLeaderboard}
+              type="button"
+            >
+              View Leaderboard
+            </button>
+            {matchState.status !== "idle" ? (
+              <button
+                className="rounded-full border border-rose-400/40 px-6 py-3 font-semibold text-rose-200 transition hover:bg-rose-400/10"
+                onClick={resetMatchState}
+                type="button"
+              >
+                Clear Match State
+              </button>
             ) : null}
           </div>
-        </div>
-      </section>
+        </section>
+
+        <section className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 shadow-2xl shadow-cyan-950/20 backdrop-blur">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-white">Match Status</h2>
+            <span
+              className={`rounded-full px-3 py-1 text-sm font-medium ${
+                connected
+                  ? "bg-emerald-400/15 text-emerald-300"
+                  : "bg-amber-400/15 text-amber-300"
+              }`}
+            >
+              {connected ? "Connected" : "Connecting"}
+            </span>
+          </div>
+
+          <div className="mt-6 space-y-4 text-sm text-slate-300">
+            <div className="rounded-2xl bg-slate-950/70 p-4">
+              <p className="text-slate-400">Frontend</p>
+              <p className="mt-1 text-base font-medium text-white">React + Vite + TypeScript</p>
+            </div>
+            <div className="rounded-2xl bg-slate-950/70 p-4">
+              <p className="text-slate-400">Realtime</p>
+              <p className="mt-1 text-base font-medium text-white">Socket.IO client ready</p>
+            </div>
+            <div className="rounded-2xl bg-slate-950/70 p-4">
+              <p className="text-slate-400">API</p>
+              <p className="mt-1 text-base font-medium text-white">{queueMessage}</p>
+            </div>
+            <div className="rounded-2xl bg-slate-950/70 p-4">
+              <p className="text-slate-400">Global Match State</p>
+              <p className="mt-1 text-base font-medium text-white">
+                {matchState.status === "idle"
+                  ? "No active match"
+                  : `Status: ${matchState.status}`}
+              </p>
+              {matchState.problem ? (
+                <p className="mt-2 text-slate-300">
+                  Problem: {matchState.problem.name} ({matchState.problem.problemId})
+                </p>
+              ) : null}
+              {matchState.result ? (
+                <p className="mt-2 text-slate-300">
+                  Result: {matchState.result.isTie
+                    ? "Tie"
+                    : matchState.result.winner ?? "Pending"}
+                </p>
+              ) : null}
+            </div>
+          </div>
+        </section>
       </div>
     </main>
   );

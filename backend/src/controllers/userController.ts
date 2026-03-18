@@ -63,3 +63,16 @@ export const loginUser = async (req: Request, res: Response) => {
     return res.status(500).json({ message: "Failed to login user", error });
   }
 };
+
+export const getLeaderboard = async (_req: Request, res: Response) => {
+  try {
+    const users = await User.find()
+      .select("handle rating wins matchesPlayed")
+      .sort({ rating: -1, wins: -1, matchesPlayed: 1 })
+      .limit(20);
+
+    return res.json(users);
+  } catch (error) {
+    return res.status(500).json({ message: "Failed to fetch leaderboard", error });
+  }
+};
