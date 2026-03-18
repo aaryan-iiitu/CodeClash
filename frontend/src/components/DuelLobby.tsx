@@ -1,6 +1,7 @@
 import axios from "axios";
 import { useState } from "react";
 import { useSocket } from "../hooks/useSocket";
+import MatchScreen from "./MatchScreen";
 
 type DuelLobbyProps = {
   handle: string;
@@ -44,7 +45,10 @@ const DuelLobby = ({ handle }: DuelLobbyProps) => {
   };
 
   return (
-    <main className="grid gap-10 lg:grid-cols-[1.3fr_0.9fr]">
+    <main className="grid gap-10">
+      {matchState.status !== "idle" ? <MatchScreen handle={handle} /> : null}
+
+      <div className="grid gap-10 lg:grid-cols-[1.3fr_0.9fr]">
       <section className="space-y-6">
         <span className="inline-flex rounded-full border border-cyan-400/30 bg-cyan-400/10 px-4 py-1 text-sm font-medium text-cyan-200">
           Real-time coding duels
@@ -150,6 +154,7 @@ const DuelLobby = ({ handle }: DuelLobbyProps) => {
           </div>
         </div>
       </section>
+      </div>
     </main>
   );
 };
