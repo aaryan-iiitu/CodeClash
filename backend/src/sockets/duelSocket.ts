@@ -1,14 +1,14 @@
 import { Server, Socket } from "socket.io";
 import { Match } from "../models/Match";
+import { User } from "../models/User";
 import { buildProblemKey, getRandomCodeforcesProblem } from "../services/codeforcesService";
 import { addUserToQueue, findMatch, MatchedPair } from "../services/matchmakingService";
 import { updateRating } from "../services/ratingService";
 import { trackFirstAcceptedSubmission } from "../services/submissionTrackerService";
 
 type JoinQueuePayload = {
-  userId: string;
+  userId?: string;
   handle: string;
-  rating: number;
   ratingRange: number;
 };
 
@@ -186,10 +186,29 @@ export const registerDuelSocket = (io: Server) => {
     console.log(`Socket connected: ${socket.id}`);
 
     socket.on("joinQueue", async (payload: JoinQueuePayload) => {
-      const queuedUser = addUserToQueue(payload);
-      userSocketMap.set(payload.userId, socket.id);
+      let user = payload.userId ? await User.findById(payload.userId) : null;
 
-      const matchedPair = findMatch(payload.userId);
+      if (!user) {
+        user = await User.findOne({ handle: payload.handle });
+      }
+
+      if (!user) {
+        user = await User.create({
+          handle: payload.handle,
+          password: `local-${payload.handle}`
+        });
+      }
+
+      const queuedUser = addUserToQueue({
+        userId: String(user._id),
+        handle: user.handle,
+        rating: user.rating,
+        ratingRange: payload.ratingRange
+      });
+
+      userSocketMap.set(String(user._id), socket.id);
+
+      const matchedPair = findMatch(String(user._id));
 
       if (!matchedPair) {
         socket.emit("joinQueue", {

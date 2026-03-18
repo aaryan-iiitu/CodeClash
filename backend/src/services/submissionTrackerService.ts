@@ -30,6 +30,8 @@ export type TrackerResult = {
 };
 
 export type SubmissionSnapshot = {
+  user1HasSubmitted: boolean;
+  user2HasSubmitted: boolean;
   user1AcceptedTime: Date | null;
   user2AcceptedTime: Date | null;
 };
@@ -75,6 +77,26 @@ const findEarliestAcceptedSubmission = ({
     .sort((a, b) => a.creationTimeSeconds - b.creationTimeSeconds);
 
   return acceptedSubmissions[0] ?? null;
+};
+
+const hasAnySubmissionForProblem = ({
+  submissions,
+  problemId,
+  startedAt
+}: {
+  submissions: CodeforcesSubmission[];
+  problemId: string;
+  startedAt?: Date;
+}) => {
+  const startedAtSeconds = startedAt ? Math.floor(startedAt.getTime() / 1000) : null;
+
+  return submissions.some((submission) => {
+    const isSameProblem = buildProblemKey(submission.problem) === problemId;
+    const isWithinWindow =
+      startedAtSeconds === null ? true : submission.creationTimeSeconds >= startedAtSeconds;
+
+    return isSameProblem && isWithinWindow;
+  });
 };
 
 const resolveTrackerResult = ({
@@ -151,6 +173,16 @@ export const trackFirstAcceptedSubmission = async ({
     });
 
     onUpdate?.({
+      user1HasSubmitted: hasAnySubmissionForProblem({
+        submissions: user1Submissions,
+        problemId,
+        startedAt
+      }),
+      user2HasSubmitted: hasAnySubmissionForProblem({
+        submissions: user2Submissions,
+        problemId,
+        startedAt
+      }),
       user1AcceptedTime: user1Accepted
         ? new Date(user1Accepted.creationTimeSeconds * 1000)
         : null,

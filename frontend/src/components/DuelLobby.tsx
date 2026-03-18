@@ -1,4 +1,3 @@
-import axios from "axios";
 import { useState } from "react";
 import { useSocket } from "../hooks/useSocket";
 import MatchScreen from "./MatchScreen";
@@ -8,41 +7,10 @@ type DuelLobbyProps = {
 };
 
 const DuelLobby = ({ handle }: DuelLobbyProps) => {
-  const { connected, matchState, resetMatchState } = useSocket();
+  const { connected, matchState, queueMessage, queueStatus, joinQueue, resetMatchState } =
+    useSocket();
   const [ratingRange, setRatingRange] = useState(200);
-  const [queueStatus, setQueueStatus] = useState("Idle");
-  const [isLoading, setIsLoading] = useState(false);
-
-  const joinQueue = async () => {
-    try {
-      setIsLoading(true);
-      setQueueStatus("Joining queue...");
-
-      const response = await axios.post("http://localhost:5000/api/matchmaking/join", {
-        handle,
-        ratingRange
-      });
-
-      const data = response.data as
-        | { status: "queued"; user: { minRating: number; maxRating: number } }
-        | { status: "matched"; pair: { user1: { handle: string }; user2: { handle: string } } };
-
-      if (data.status === "matched") {
-        setQueueStatus(
-          `Match found: ${data.pair.user1.handle} vs ${data.pair.user2.handle}`
-        );
-        return;
-      }
-
-      setQueueStatus(
-        `Queued for ${data.user.minRating} to ${data.user.maxRating} rating range`
-      );
-    } catch (error) {
-      setQueueStatus("Could not join queue");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const isLoading = queueStatus === "joining";
 
   return (
     <main className="grid gap-10">
@@ -85,7 +53,7 @@ const DuelLobby = ({ handle }: DuelLobbyProps) => {
           <button
             className="rounded-full bg-cyan-400 px-6 py-3 font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:bg-cyan-700"
             disabled={isLoading}
-            onClick={joinQueue}
+            onClick={() => joinQueue({ handle, ratingRange })}
             type="button"
           >
             {isLoading ? "Finding..." : "Find Match"}
@@ -130,7 +98,7 @@ const DuelLobby = ({ handle }: DuelLobbyProps) => {
           </div>
           <div className="rounded-2xl bg-slate-950/70 p-4">
             <p className="text-slate-400">API</p>
-            <p className="mt-1 text-base font-medium text-white">{queueStatus}</p>
+            <p className="mt-1 text-base font-medium text-white">{queueMessage}</p>
           </div>
           <div className="rounded-2xl bg-slate-950/70 p-4">
             <p className="text-slate-400">Global Match State</p>

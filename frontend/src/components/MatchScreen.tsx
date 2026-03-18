@@ -31,6 +31,14 @@ const MatchScreen = ({ handle }: MatchScreenProps) => {
       : matchState.pair.user1;
   }, [handle, matchState.pair]);
 
+  const playerSlot = useMemo(() => {
+    if (!matchState.pair) {
+      return null;
+    }
+
+    return matchState.pair.user1.handle === handle ? "user1" : "user2";
+  }, [handle, matchState.pair]);
+
   useEffect(() => {
     if (!matchState.startedAt || matchState.status === "finished") {
       return;
@@ -66,6 +74,16 @@ const MatchScreen = ({ handle }: MatchScreenProps) => {
       : matchState.status === "started"
         ? "ongoing"
         : "finished";
+
+  const opponentSubmitted =
+    playerSlot === "user1"
+      ? matchState.submissionUpdate?.user2HasSubmitted
+      : matchState.submissionUpdate?.user1HasSubmitted;
+
+  const opponentSolved =
+    playerSlot === "user1"
+      ? matchState.submissionUpdate?.user2AcceptedTime
+      : matchState.submissionUpdate?.user1AcceptedTime;
 
   return (
     <section className="rounded-[2rem] border border-slate-800 bg-slate-900/80 p-8 shadow-2xl shadow-cyan-950/20 backdrop-blur">
@@ -109,6 +127,17 @@ const MatchScreen = ({ handle }: MatchScreenProps) => {
             <p className="text-sm uppercase tracking-[0.25em] text-slate-400">Countdown</p>
             <p className="mt-3 text-5xl font-semibold text-white">
               {statusLabel === "finished" ? "00:00" : formatTime(timeLeft)}
+            </p>
+          </div>
+
+          <div className="rounded-3xl bg-slate-950/80 p-6">
+            <p className="text-sm uppercase tracking-[0.25em] text-slate-400">Opponent Status</p>
+            <p className="mt-3 text-lg text-slate-200">
+              {opponentSolved
+                ? "Opponent solved"
+                : opponentSubmitted
+                  ? "Opponent submitted"
+                  : "Waiting for opponent activity"}
             </p>
           </div>
 
