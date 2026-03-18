@@ -7,7 +7,7 @@ type DuelLobbyProps = {
 };
 
 const DuelLobby = ({ handle }: DuelLobbyProps) => {
-  const socket = useSocket();
+  const { connected, matchState, resetMatchState } = useSocket();
   const [ratingRange, setRatingRange] = useState(200);
   const [queueStatus, setQueueStatus] = useState("Idle");
   const [isLoading, setIsLoading] = useState(false);
@@ -89,6 +89,15 @@ const DuelLobby = ({ handle }: DuelLobbyProps) => {
           <button className="rounded-full border border-slate-700 px-6 py-3 font-semibold text-slate-100 transition hover:border-slate-500 hover:bg-slate-900">
             View Leaderboard
           </button>
+          {matchState.status !== "idle" ? (
+            <button
+              className="rounded-full border border-rose-400/40 px-6 py-3 font-semibold text-rose-200 transition hover:bg-rose-400/10"
+              onClick={resetMatchState}
+              type="button"
+            >
+              Clear Match State
+            </button>
+          ) : null}
         </div>
       </section>
 
@@ -97,12 +106,12 @@ const DuelLobby = ({ handle }: DuelLobbyProps) => {
           <h2 className="text-xl font-semibold text-white">Match Status</h2>
           <span
             className={`rounded-full px-3 py-1 text-sm font-medium ${
-              socket.connected
+              connected
                 ? "bg-emerald-400/15 text-emerald-300"
                 : "bg-amber-400/15 text-amber-300"
             }`}
           >
-            {socket.connected ? "Connected" : "Connecting"}
+            {connected ? "Connected" : "Connecting"}
           </span>
         </div>
 
@@ -118,6 +127,26 @@ const DuelLobby = ({ handle }: DuelLobbyProps) => {
           <div className="rounded-2xl bg-slate-950/70 p-4">
             <p className="text-slate-400">API</p>
             <p className="mt-1 text-base font-medium text-white">{queueStatus}</p>
+          </div>
+          <div className="rounded-2xl bg-slate-950/70 p-4">
+            <p className="text-slate-400">Global Match State</p>
+            <p className="mt-1 text-base font-medium text-white">
+              {matchState.status === "idle"
+                ? "No active match"
+                : `Status: ${matchState.status}`}
+            </p>
+            {matchState.problem ? (
+              <p className="mt-2 text-slate-300">
+                Problem: {matchState.problem.name} ({matchState.problem.problemId})
+              </p>
+            ) : null}
+            {matchState.result ? (
+              <p className="mt-2 text-slate-300">
+                Result: {matchState.result.isTie
+                  ? "Tie"
+                  : matchState.result.winner ?? "Pending"}
+              </p>
+            ) : null}
           </div>
         </div>
       </section>
