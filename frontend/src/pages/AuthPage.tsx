@@ -1,4 +1,6 @@
+import axios from "axios";
 import { FormEvent, useState } from "react";
+import { API_BASE_URL } from "../config/env";
 
 type AuthMode = "login" | "register";
 
@@ -9,10 +11,12 @@ type AuthPageProps = {
 const AuthPage = ({ onAuthSuccess }: AuthPageProps) => {
   const [mode, setMode] = useState<AuthMode>("login");
   const [handle, setHandle] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const submitLabel = mode === "login" ? "Login" : "Register";
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     const trimmedHandle = handle.trim();
@@ -21,8 +25,32 @@ const AuthPage = ({ onAuthSuccess }: AuthPageProps) => {
       return;
     }
 
-    localStorage.setItem("codeclash-user", JSON.stringify({ handle: trimmedHandle }));
-    onAuthSuccess(trimmedHandle);
+    try {
+      setIsSubmitting(true);
+      setError(null);
+
+      const endpoint =
+        mode === "login"
+          ? `${API_BASE_URL}/api/users/login`
+          : `${API_BASE_URL}/api/users/register`;
+
+      const response = await axios.post(endpoint, {
+        handle: trimmedHandle
+      });
+
+      const user = response.data.user as { id: string; handle: string; rating: number };
+
+      localStorage.setItem("codeclash-user", JSON.stringify(user));
+      onAuthSuccess(user.handle);
+    } catch (requestError) {
+      if (axios.isAxiosError(requestError)) {
+        setError(requestError.response?.data?.message ?? "Authentication failed");
+      } else {
+        setError("Authentication failed");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -85,11 +113,13 @@ const AuthPage = ({ onAuthSuccess }: AuthPageProps) => {
             </div>
 
             <button
-              className="w-full rounded-2xl bg-cyan-400 px-6 py-3 font-semibold text-slate-950 transition hover:bg-cyan-300"
+              className="w-full rounded-2xl bg-cyan-400 px-6 py-3 font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:bg-cyan-700"
+              disabled={isSubmitting}
               type="submit"
             >
-              {submitLabel}
+              {isSubmitting ? `${submitLabel}...` : submitLabel}
             </button>
+            {error ? <p className="text-sm text-rose-300">{error}</p> : null}
           </form>
         </section>
       </main>

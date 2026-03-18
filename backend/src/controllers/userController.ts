@@ -4,9 +4,10 @@ import { User } from "../models/User";
 export const registerUser = async (req: Request, res: Response) => {
   try {
     const { handle, password } = req.body;
+    const resolvedPassword = password || `local-${handle}`;
 
-    if (!handle || !password) {
-      return res.status(400).json({ message: "Handle and password are required" });
+    if (!handle) {
+      return res.status(400).json({ message: "Handle is required" });
     }
 
     const existingUser = await User.findOne({ handle });
@@ -17,7 +18,7 @@ export const registerUser = async (req: Request, res: Response) => {
 
     const user = await User.create({
       handle,
-      password
+      password: resolvedPassword
     });
 
     return res.status(201).json({
@@ -38,14 +39,15 @@ export const registerUser = async (req: Request, res: Response) => {
 export const loginUser = async (req: Request, res: Response) => {
   try {
     const { handle, password } = req.body;
+    const resolvedPassword = password || `local-${handle}`;
 
-    if (!handle || !password) {
-      return res.status(400).json({ message: "Handle and password are required" });
+    if (!handle) {
+      return res.status(400).json({ message: "Handle is required" });
     }
 
     const user = await User.findOne({ handle });
 
-    if (!user || user.password !== password) {
+    if (!user || user.password !== resolvedPassword) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 

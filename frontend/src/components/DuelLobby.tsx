@@ -8,7 +8,7 @@ type DuelLobbyProps = {
 };
 
 const DuelLobby = ({ handle, onOpenLeaderboard }: DuelLobbyProps) => {
-  const { connected, matchState, queueMessage, queueStatus, joinQueue, resetMatchState } =
+  const { connected, matchState, popupMessage, queueMessage, queueStatus, joinQueue, resetMatchState } =
     useSocket();
   const [ratingRange, setRatingRange] = useState(200);
   const isLoading = queueStatus === "joining";
@@ -107,6 +107,12 @@ const DuelLobby = ({ handle, onOpenLeaderboard }: DuelLobbyProps) => {
               <p className="text-slate-400">API</p>
               <p className="mt-1 text-base font-medium text-white">{queueMessage}</p>
             </div>
+            {popupMessage ? (
+              <div className="rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4">
+                <p className="text-slate-400">Browser Notice</p>
+                <p className="mt-1 text-base font-medium text-amber-200">{popupMessage}</p>
+              </div>
+            ) : null}
             <div className="rounded-2xl bg-slate-950/70 p-4">
               <p className="text-slate-400">Global Match State</p>
               <p className="mt-1 text-base font-medium text-white">

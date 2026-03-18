@@ -221,17 +221,9 @@ export const registerDuelSocket = (io: Server) => {
       try {
         await startTrackedMatch({ io, matchedPair });
       } catch (error) {
-        emitToUsers(
-          io,
-          [matchedPair.user1.userId, matchedPair.user2.userId],
-          "matchResult",
-          {
-          winner: null,
-          submissionTime: null,
-          isTie: false,
-          error: error instanceof Error ? error.message : "Failed to start match"
-          }
-        );
+        emitToUsers(io, [matchedPair.user1.userId, matchedPair.user2.userId], "queueError", {
+          message: error instanceof Error ? error.message : "Failed to start match"
+        });
       }
     });
 

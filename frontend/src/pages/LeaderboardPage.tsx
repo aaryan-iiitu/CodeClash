@@ -1,5 +1,6 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
+import { API_BASE_URL } from "../config/env";
 
 type LeaderboardUser = {
   _id: string;
@@ -23,7 +24,7 @@ const LeaderboardPage = ({ onBack }: LeaderboardPageProps) => {
       try {
         setLoading(true);
         const response = await axios.get<LeaderboardUser[]>(
-          "http://localhost:5000/api/users/leaderboard"
+          `${API_BASE_URL}/api/users/leaderboard`
         );
         setUsers(response.data);
         setError(null);

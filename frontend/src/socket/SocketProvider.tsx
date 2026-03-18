@@ -50,6 +50,22 @@ type MatchResultPayload = {
   submissionTime: string | null;
   isTie: boolean;
   error?: string;
+  ratings?: {
+    winner: {
+      id: string;
+      handle: string;
+      rating: number;
+      matchesPlayed: number;
+      wins: number;
+    };
+    loser: {
+      id: string;
+      handle: string;
+      rating: number;
+      matchesPlayed: number;
+      wins: number;
+    };
+  } | null;
 };
 
 type SubmissionUpdatePayload = {
@@ -75,6 +91,7 @@ type MatchState = {
 type SocketContextValue = {
   connected: boolean;
   matchState: MatchState;
+  popupMessage: string | null;
   queueMessage: string;
   queueStatus: "idle" | "joining" | "queued" | "matched" | "error";
   joinQueue: (input: { handle: string; ratingRange: number }) => void;
@@ -99,11 +116,20 @@ export const SocketProvider = ({ children }: PropsWithChildren) => {
   const [matchState, setMatchState] = useState<MatchState>(initialMatchState);
   const [queueStatus, setQueueStatus] = useState<"idle" | "joining" | "queued" | "matched" | "error">("idle");
   const [queueMessage, setQueueMessage] = useState("Idle");
+  const [popupMessage, setPopupMessage] = useState<string | null>(null);
   const openedProblemMatchIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     const onConnect = () => setConnected(true);
-    const onDisconnect = () => setConnected(false);
+    const onDisconnect = () => {
+      setConnected(false);
+      setQueueStatus("error");
+      setQueueMessage("Socket disconnected. Reconnect and try again.");
+    };
+    const onConnectError = () => {
+      setQueueStatus("error");
+      setQueueMessage("Could not connect to realtime server.");
+    };
 
     const onQueueJoined = (payload: {
       status: "queued";
@@ -118,6 +144,7 @@ export const SocketProvider = ({ children }: PropsWithChildren) => {
     const onMatchFound = (payload: MatchFoundPayload) => {
       setQueueStatus("matched");
       setQueueMessage(`Match found: ${payload.pair.user1.handle} vs ${payload.pair.user2.handle}`);
+      setPopupMessage(null);
       setMatchState({
         roomId: payload.roomId,
         matchId: payload.matchId,
@@ -140,10 +167,16 @@ export const SocketProvider = ({ children }: PropsWithChildren) => {
           openedProblemMatchIdRef.current !== payload.matchId
         ) {
           openedProblemMatchIdRef.current = payload.matchId;
-          window.open(
+          const newWindow = window.open(
             `https://codeforces.com/problemset/problem/${current.problem?.contestId}/${current.problem?.index}`,
             "_blank",
             "noopener,noreferrer"
+          );
+
+          setPopupMessage(
+            newWindow
+              ? null
+              : "Browser blocked the problem tab. Use the Open Problem button below."
           );
         }
 
@@ -167,6 +200,10 @@ export const SocketProvider = ({ children }: PropsWithChildren) => {
     };
 
     const onMatchResult = (payload: MatchResultPayload) => {
+      setQueueStatus(payload.error ? "error" : "matched");
+      if (payload.error) {
+        setQueueMessage(payload.error);
+      }
       setMatchState((current) => ({
         ...current,
         roomId: payload.roomId,
@@ -176,10 +213,17 @@ export const SocketProvider = ({ children }: PropsWithChildren) => {
       }));
     };
 
+    const onQueueError = (payload: { message: string }) => {
+      setQueueStatus("error");
+      setQueueMessage(payload.message);
+    };
+
     socket.connect();
     socket.on("connect", onConnect);
+    socket.on("connect_error", onConnectError);
     socket.on("disconnect", onDisconnect);
     socket.on("joinQueue", onQueueJoined);
+    socket.on("queueError", onQueueError);
     socket.on("matchFound", onMatchFound);
     socket.on("startMatch", onStartMatch);
     socket.on("submissionUpdate", onSubmissionUpdate);
@@ -187,8 +231,10 @@ export const SocketProvider = ({ children }: PropsWithChildren) => {
 
     return () => {
       socket.off("connect", onConnect);
+      socket.off("connect_error", onConnectError);
       socket.off("disconnect", onDisconnect);
       socket.off("joinQueue", onQueueJoined);
+      socket.off("queueError", onQueueError);
       socket.off("matchFound", onMatchFound);
       socket.off("startMatch", onStartMatch);
       socket.off("submissionUpdate", onSubmissionUpdate);
@@ -200,11 +246,13 @@ export const SocketProvider = ({ children }: PropsWithChildren) => {
     () => ({
       connected,
       matchState,
+      popupMessage,
       queueMessage,
       queueStatus,
       joinQueue: ({ handle, ratingRange }) => {
         setQueueStatus("joining");
         setQueueMessage("Joining queue...");
+        setPopupMessage(null);
         socket.emit("joinQueue", {
           handle,
           ratingRange
@@ -214,10 +262,11 @@ export const SocketProvider = ({ children }: PropsWithChildren) => {
         openedProblemMatchIdRef.current = null;
         setQueueStatus("idle");
         setQueueMessage("Idle");
+        setPopupMessage(null);
         setMatchState(initialMatchState);
       }
     }),
-    [connected, matchState, queueMessage, queueStatus]
+    [connected, matchState, popupMessage, queueMessage, queueStatus]
   );
 
   return <SocketContext.Provider value={value}>{children}</SocketContext.Provider>;
